@@ -7,48 +7,59 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type timerModel struct {
-	duration time.Duration
-	elapsed  time.Duration
-	done     bool
+type pomodoroModel struct {
+	totalCycles        int           // Total number of Pomodoro cycles to complete
+	currentCycle       int           // Current cycle number
+	workDuration       time.Duration // Duration of the work period
+	shortBreakDuration time.Duration // Duration of the short break
+	longBreakDuration  time.Duration // Duration of the long break
+	state              timerState    // Current state of the timer
+	elapsed            time.Duration // Time elapsed in the current period
+	paused             bool          // Whether the timer is paused
 }
 
-func initialTimerModel(duration time.Duration) timerModel {
-	return timerModel{
-		duration: duration,
-		elapsed:  0,
-		done:     false,
+type timerState int
+
+const (
+	stateWork timerState = iota
+	stateShortBreak
+	stateLongBreak
+	stateFinished
+)
+
+func initialPomodoroModel(totalCycles int, workDuration, shortBreakDuration, longBreakDuration time.Duration) pomodoroModel {
+	return pomodoroModel{
+		totalCycles:        totalCycles,
+		currentCycle:       1,
+		workDuration:       workDuration,
+		shortBreakDuration: shortBreakDuration,
+		longBreakDuration:  longBreakDuration,
+		state:              stateWork,
+		elapsed:            0,
+		paused:             false,
 	}
 }
 
-func (m timerModel) Init() tea.Cmd {
+func (p pomodoroModel) Init() tea.Cmd {
 	return tickCmd()
 }
 
-func (m timerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p pomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
-		m.elapsed += time.Second
-		if m.elapsed >= m.duration {
-			m.done = true
-			return m, tea.Quit
-		}
-		return m, tickCmd()
+		p.elapsed += time.Second
+		return p, tickCmd()
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			return m, tea.Quit
+			return p, tea.Quit
 		}
 	}
-	return m, nil
+	return p, nil
 }
 
-func (m timerModel) View() string {
-	remaining := m.duration - m.elapsed
-	if remaining < 0 {
-		remaining = 0
-	}
-	return fmt.Sprintf("Time remaining: %s\n\nPress Ctrl+C or q to quit.\n", remaining.String())
+func (p pomodoroModel) View() string {
+	return fmt.Sprintf("Time elapsed: %s\n\nPress Ctrl+C or q to quit.\n", p.elapsed.String())
 }
 
 type tickMsg time.Time
@@ -60,11 +71,11 @@ func tickCmd() tea.Cmd {
 	}
 }
 
-func RunTimer(duration time.Duration) error {
-	p := tea.NewProgram(initialTimerModel(duration))
+func RunPomodoro(totalCycles int, workDuration, shortBreakDuration, longBreakDuration time.Duration) error {
+	p := tea.NewProgram(initialPomodoroModel(totalCycles, workDuration, shortBreakDuration, longBreakDuration))
 	if _, err := p.Run(); err != nil {
 		return err
 	}
-	fmt.Println("Timer completed.")
+	fmt.Println("Pomodoro session completed.")
 	return nil
 }
