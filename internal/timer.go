@@ -47,12 +47,17 @@ func (p pomodoroModel) Init() tea.Cmd {
 func (p pomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tickMsg:
-		p.elapsed += time.Second
+		if p.paused != true {
+			p.elapsed += time.Second
+		}
 		return p, tickCmd()
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return p, tea.Quit
+		case "p":
+			p.paused = !p.paused
+			return p, nil
 		}
 	}
 	return p, nil
