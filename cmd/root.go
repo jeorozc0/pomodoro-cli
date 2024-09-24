@@ -36,18 +36,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	clearScreen()
 
 	// Run work timer
-	fmt.Printf("Work Timer: %s\n\n", workDuration)
-	if err := internal.RunTimer(workDuration); err != nil {
+	fmt.Println("Starting timer")
+	if err := internal.RunPomodoro(4, // totalCycles
+		workDuration*time.Minute, // workDuration
+		restDuration*time.Minute, // shortBreakDuration
+		15*time.Minute); err != nil {
 		return fmt.Errorf("failed to run work timer: %w", err)
-	}
-
-	// Clear screen (optional)
-	clearScreen()
-
-	// Run rest timer
-	fmt.Printf("Rest Timer: %s\n\n", restDuration)
-	if err := internal.RunTimer(restDuration); err != nil {
-		return fmt.Errorf("failed to run rest timer: %w", err)
 	}
 
 	fmt.Println("Timer sessions completed.")
