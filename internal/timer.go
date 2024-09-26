@@ -49,6 +49,12 @@ func (p pomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		if p.paused != true {
 			p.elapsed += time.Second
+			if p.elapsed >= p.currentDuration() {
+				p = p.nextState()
+				if p.state == stateFinished {
+					return p, tea.Quit
+				}
+			}
 		}
 		return p, tickCmd()
 	case tea.KeyMsg:
