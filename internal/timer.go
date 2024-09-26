@@ -76,6 +76,37 @@ func tickCmd() tea.Cmd {
 	}
 }
 
+func (p pomodoroModel) currentDuration() time.Duration {
+	switch p.state {
+	case stateWork:
+		return p.workDuration
+	case stateShortBreak:
+		return p.shortBreakDuration
+	case stateLongBreak:
+		return p.longBreakDuration
+	default:
+		return 0
+	}
+}
+
+func (p pomodoroModel) nextState() pomodoroModel {
+	p.elapsed = 0
+	switch p.state {
+	case stateWork:
+		if p.currentCycle < p.totalCycles {
+			p.state = stateShortBreak
+		} else {
+			p.state = stateLongBreak
+		}
+	case stateShortBreak:
+		p.currentCycle++
+		p.state = stateWork
+	case stateLongBreak:
+		p.state = stateFinished
+	}
+	return p
+}
+
 func RunPomodoro(totalCycles int, workDuration, shortBreakDuration, longBreakDuration time.Duration) error {
 	p := tea.NewProgram(initialPomodoroModel(totalCycles, workDuration, shortBreakDuration, longBreakDuration))
 	if _, err := p.Run(); err != nil {
