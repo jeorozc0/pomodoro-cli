@@ -31,9 +31,9 @@ func initialPomodoroModel(totalCycles int, workDuration, shortBreakDuration, lon
 	return pomodoroModel{
 		totalCycles:        totalCycles,
 		currentCycle:       1,
-		workDuration:       workDuration,
-		shortBreakDuration: shortBreakDuration,
-		longBreakDuration:  longBreakDuration,
+		workDuration:       25 * time.Minute, // Correctly set work duration
+		shortBreakDuration: 5 * time.Minute,  // Correctly set short break duration
+		longBreakDuration:  15 * time.Minute, // Correctly set long break duration
 		state:              stateWork,
 		elapsed:            0,
 		paused:             false,
@@ -63,8 +63,33 @@ func (p pomodoroModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, nil
 }
 
-func (p pomodoroModel) View() string {
-	return fmt.Sprintf("Time elapsed: %s\n\nPress Ctrl+C or q to quit.\n", p.elapsed.String())
+func (m pomodoroModel) View() string {
+	remaining := m.currentDuration() - m.elapsed
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	minutes := int(remaining.Minutes())
+	seconds := int(remaining.Seconds()) % 60
+
+	status := "Running"
+	if m.paused {
+		status = "Paused"
+	}
+
+	var stateStr string
+	switch m.state {
+	case stateWork:
+		stateStr = "Work"
+	case stateShortBreak:
+		stateStr = "Short Break"
+	case stateLongBreak:
+		stateStr = "Long Break"
+	}
+
+	return fmt.Sprintf(
+		"%s - Cycle %d/%d\nTime remaining: %02d:%02d [%s]\n\nPress 'p' to pause/resume, Ctrl+C or 'q' to quit.\n",
+		stateStr, m.currentCycle, m.totalCycles, minutes, seconds, status)
 }
 
 type tickMsg time.Time
