@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/jeorozc0/pomodoro-cli/internal"
 	"github.com/spf13/cobra"
@@ -22,12 +21,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse selections
-	workDuration, err := parseTime(workTimeSelection)
+	workDuration, err := parseWork(workTimeSelection)
 	if err != nil {
 		return fmt.Errorf("invalid work time: %w", err)
 	}
 
-	restDuration, err := parseTime(restTimeSelection)
+	restDuration, err := parseRest(restTimeSelection)
 	if err != nil {
 		return fmt.Errorf("invalid rest time: %w", err)
 	}
@@ -38,9 +37,9 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	// Run work timer
 	fmt.Println("Starting timer")
 	if err := internal.RunPomodoro(4, // totalCycles
-		workDuration*time.Minute, // workDuration
-		restDuration*time.Minute, // shortBreakDuration
-		15*time.Minute); err != nil {
+		workDuration, // workDuration
+		restDuration, // shortBreakDuration
+		15); err != nil {
 		return fmt.Errorf("failed to run work timer: %w", err)
 	}
 
@@ -48,14 +47,27 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func parseTime(selection string) (time.Duration, error) {
+func parseWork(selection string) (int, error) {
 	switch selection {
-	case "Short":
-		return 5 * time.Second, nil
-	case "Medium":
-		return 10 * time.Second, nil
-	case "Long":
-		return 15 * time.Second, nil
+	case "15 mins":
+		return 1, nil
+	case "25 mins":
+		return 25, nil
+	case "45 mins":
+		return 45, nil
+	default:
+		return 0, fmt.Errorf("unknown time selection: %s", selection)
+	}
+}
+
+func parseRest(selection string) (int, error) {
+	switch selection {
+	case "5 mins":
+		return 1, nil
+	case "10 mins":
+		return 10, nil
+	case "15 mins":
+		return 15, nil
 	default:
 		return 0, fmt.Errorf("unknown time selection: %s", selection)
 	}

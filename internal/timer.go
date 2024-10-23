@@ -2,9 +2,14 @@ package internal
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/gopxl/beep/v2"
+	"github.com/gopxl/beep/v2/mp3"
+	"github.com/gopxl/beep/v2/speaker"
 )
 
 type pomodoroModel struct {
@@ -27,13 +32,13 @@ const (
 	stateFinished
 )
 
-func initialPomodoroModel(totalCycles int, workDuration, shortBreakDuration, longBreakDuration time.Duration) pomodoroModel {
+func initialPomodoroModel(totalCycles, workDuration, shortBreakDuration, longBreakDuration int) pomodoroModel {
 	return pomodoroModel{
 		totalCycles:        totalCycles,
 		currentCycle:       1,
-		workDuration:       25 * time.Minute, // Correctly set work duration
-		shortBreakDuration: 5 * time.Minute,  // Correctly set short break duration
-		longBreakDuration:  15 * time.Minute, // Correctly set long break duration
+		workDuration:       time.Duration(workDuration) * time.Minute,       // Correctly set work duration
+		shortBreakDuration: time.Duration(shortBreakDuration) * time.Minute, // Correctly set short break duration
+		longBreakDuration:  15 * time.Minute,                                // Correctly set long break duration
 		state:              stateWork,
 		elapsed:            0,
 		paused:             false,
@@ -135,10 +140,36 @@ func (p pomodoroModel) nextState() pomodoroModel {
 	case stateLongBreak:
 		p.state = stateFinished
 	}
+	go func() {
+		if err := playSound(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error playing sound: %v\n", err)
+		}
+	}()
 	return p
 }
 
-func RunPomodoro(totalCycles int, workDuration, shortBreakDuration, longBreakDuration time.Duration) error {
+func playSound() error {
+	f, err := os.Open("Censor Beep Sound.mp3")
+	if err != nil {
+		return fmt.Errorf("couldn't open file: %s", err)
+	}
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer streamer.Close()
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+
+	done := make(chan bool)
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		done <- true
+	})))
+
+	<-done
+	return nil
+}
+
+func RunPomodoro(totalCycles, workDuration, shortBreakDuration, longBreakDuration int) error {
 	p := tea.NewProgram(initialPomodoroModel(totalCycles, workDuration, shortBreakDuration, longBreakDuration))
 	if _, err := p.Run(); err != nil {
 		return err

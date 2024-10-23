@@ -16,8 +16,8 @@ type model struct {
 
 func initialModel() model {
 	return model{
-		workTime:         []string{"Short", "Medium", "Long"},
-		restTime:         []string{"Short", "Medium", "Long"},
+		workTime:         []string{"15 mins", "25 mins", "45 mins"},
+		restTime:         []string{"5 mins", "10 mins", "15 mins"},
 		selectedWorkTime: -1, // No selection yet
 		selectedRestTime: -1, // No selection yet
 		state:            0,  // Start with workTime selection
